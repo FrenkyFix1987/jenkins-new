@@ -1,0 +1,88 @@
+properties([
+    pipelineTriggers([
+        upstream(
+            threshold: hudson.model.Result.SUCCESS,
+            upstreamProjects: 'Test Freestyle'
+        ),
+        githubPush()
+    ])
+])
+def TEMP_VARS = [:]
+pipeline {
+    agent any 
+    parameters{
+        string(name: "USERID", defaultValue: "", description: "Enter your user_id")   
+    }
+    stages {
+        stage ('Hello') {
+            steps {
+                script{
+                    sleep 5
+                    echo "Hello ${params.USERID}!!!"
+                    TEMP_VARS['test'] = 123
+                    // sh 'exit 1'
+                }
+            }
+        }
+        stage ('Input') {
+            steps {
+                script{
+                    waitUntil{
+                        try {
+                            sh "exit 1"
+                            return true
+                        }
+                        catch(err){
+                            return false
+                        }
+                    }
+                    def loginInfo = [:]
+                    try{
+                        retry(2){
+                            timeout(time: 10, unit: 'SECONDS'){
+                                loginInfo = input(message: 'Approve?', ok: 'Yes', parameters: [
+                                    string(description: 'Enter Userid', name: 'userid', trim: true),
+                                    password(defaultValue: '', description: 'Enter Password', name: 'password'),
+                                    string(description: 'Test', name: 'test', trim: true),
+                                ])
+                            }
+                        }
+                    } 
+                    catch(err){
+                        loginInfo = [
+                            userid: "default",
+                            password: "default",
+                            test: "test"
+                        ]
+                    }
+                    echo "Username: " + loginInfo["userid"]
+                    echo "Password: " + loginInfo["password"]
+                    echo loginInfo.userid + " " + loginInfo.password
+                    echo "${loginInfo.userid} ${loginInfo.password}"
+                    echo "${TEMP_VARS.test}"
+                    env.TEST = loginInfo.test
+                }
+                echo "TEST: ${env.TEST}"
+                // input cancel: 'No', id: 'Test', message: 'Approve?', ok: 'Yes', parameters: [booleanParam(defaultValue: true, description: 'Prerelease', name: 'prerelease'), choice(choices: ['option1', 'option2', 'option3'], description: 'Select option', name: 'Options')], submitter: 'alex-test'
+                // input cancel: 'No', id: 'Test', message: 'Approve?', ok: 'Yes', parameters: [booleanParam(defaultValue: true, description: 'Prerelease', name: 'prerelease'), choice(choices: ['Select option'], description: "option1\noption2\noption3", name: 'Options')], submitter: 'alex-test'
+                // input cancel: 'No', id: 'Test', message: 'Approve?', ok: 'Yes', parameters: [booleanParam(defaultValue: true, name: 'prerelease')], submitter: 'alex-test'
+                // input id: 'test' message: "Continue?"
+            }
+        }
+        stage ('World') {
+            steps {
+                sleep 5
+                echo 'World!!!'
+                sh 'exit 0'
+            }
+        }
+    }
+    post{
+        always{
+            echo 'Done'
+        }
+        failure{
+            echo 'Failed!'
+        }
+    }
+}
