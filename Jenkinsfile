@@ -15,7 +15,7 @@ pipeline {
 
         stage('') {
           steps {
-            sh 'echo parallel'
+            sh 'echo "Parallel"'
           }
         }
 
