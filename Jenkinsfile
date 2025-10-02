@@ -7,7 +7,7 @@ pipeline {
         TEST = '123'
       }
       steps {
-        sh 'echo "Test"'
+        sh 'echo "Hello"'
       }
     }
 
