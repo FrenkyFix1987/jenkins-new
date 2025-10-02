@@ -13,7 +13,7 @@ pipeline {
           }
         }
 
-        stage('') {
+        stage('error') {
           steps {
             sh 'echo "Parallel"'
           }
